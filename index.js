@@ -4,7 +4,10 @@ var fs = require('fs');
 var Epoll = require('epoll').Epoll;
 var os = require("os");
 var MAPPING;
-if (os.release().startsWith("4.4")) {
+
+if (os.release().startsWith("4.4.13-ntc-mlc")) {
+  MAPPING = [1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020];
+} else if (os.release().startsWith("4.4")) {
   MAPPING = [1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023];
 } else {
   MAPPING = [408, 409, 410, 411, 412, 413, 414, 415];
@@ -46,11 +49,24 @@ function Gpio(gpio, direction, edge, options) {
 
 	options = options || {};
 
-	if (gpio == null || !MAPPING[gpio]) {
+        //
+        // MenloParkInnovcation: If the port specified is greater than the MAPPING
+        // maximum, take it as a direct map.
+        //
+        // This is to allow access to all C.H.I.P. ports.
+        //
+
+	if (gpio == null) {
 		throw new Error('Invalid GPIO Pin')
 	}
 
-	this.gpio = MAPPING[gpio];
+        if (gpio > MAPPING.length) {
+            this.gpio = gpio;
+        }
+        else {
+            this.gpio = MAPPING[gpio];
+        }
+
 	this.gpioPath = GPIO_ROOT + 'gpio' + this.gpio + '/';
 	this.opts = {};
 	this.opts.debounceTimeout = options.debounceTimeout || 0;
